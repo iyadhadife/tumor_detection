@@ -1,17 +1,13 @@
 import os
+import cv2
 import pandas as pd
 import numpy as np
+from PIL import Image
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from imblearn.over_sampling import SMOTE
-import os
-import sys
-import cv2
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
-from PIL import Image
+import torch
+from torchvision import transforms
 
 def create_dataset_dict(dataset, names):
     for name in names:
@@ -71,17 +67,14 @@ def extract_image_components(path):
         if tsr_img is None or tsr_img_color is None:
             continue
             
-        # Thresholding for binary image
         _, thresh = cv2.threshold(tsr_img, 0, 255, cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
         contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-        # Histograms
         histgray = cv2.calcHist([tsr_img], [0], None, [256], [0, 256])
         hist_b = cv2.calcHist([tsr_img_color], [0], None, [256], [0, 256])
         hist_g = cv2.calcHist([tsr_img_color], [1], None, [256], [0, 256])
         hist_r = cv2.calcHist([tsr_img_color], [2], None, [256], [0, 256])
         
-        # Texture feature using Laplacian
         laplacian = cv2.Laplacian(tsr_img, cv2.CV_64F)
         laplacian_mean = float(np.mean(np.abs(laplacian)))
         
@@ -126,55 +119,51 @@ def extract_image_components(path):
 def create_nsame_values(val, nb):
     return [val] * nb
 
-def preprocess_tabular_data(df, target_col='labels', n_components=30, apply_smote=True):
+def process_and_save_augmented_tensors(input_base_dir, output_base_dir, num_augmentations=2, img_size=(32, 32)):
     """
-    Cleans, scales, balances (via SMOTE), and reduces dimensions (via PCA) of tabular features.
-    
-    Parameters:
-    - df (pd.DataFrame): The raw tabular dataframe containing features and labels.
-    - target_col (str): Name of the target column.
-    - n_components (int): Number of principal components to keep for PCA.
-    - apply_smote (bool): Whether to apply SMOTE for balancing classes.
-    
-    Returns:
-    - X_pca (np.ndarray): Preprocessed and reduced feature matrix.
-    - y_balanced (np.ndarray): Balanced target labels.
-    - pca (PCA): Fitted PCA object.
-    - scaler (StandardScaler): Fitted scaler object.
+    Applique des transformations PyTorch avec Data Augmentation sur les images 
+    et sauvegarde les tenseurs résultants au format .pt dans output_base_dir.
     """
-    # Separate features and target
-    X = df.drop(columns=[target_col])
-    y = df[target_col]
+    os.makedirs(output_base_dir, exist_ok=True)
     
-    # Convert string labels ('yes'/'no') to binary integers (1/0)
-    if y.dtype == object or y.isin(['yes', 'no']).any():
-        y = y.apply(lambda val: 1 if str(val).lower() in ['yes', '1', 'true'] else 0)
-
-    # Handle missing values by filling with 0 (since missing areas/colors imply a count/value of 0)
-    X = X.fillna(0)
+    augmentation_pipeline = transforms.Compose([
+        transforms.Resize(img_size),
+        transforms.RandomHorizontalFlip(p=0.5),
+        transforms.RandomRotation(degrees=15),
+        transforms.ColorJitter(brightness=0.2, contrast=0.2),
+        transforms.ToTensor(),
+        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+    ])
     
-    # 1. Feature Scaling (Standardization)
-    scaler = StandardScaler()
-    X_scaled = scaler.fit_transform(X)
-    
-    # 2. Data Balancing using SMOTE (Synthetic Minority Over-sampling Technique)
-    if apply_smote:
-        smote = SMOTE(random_state=42)
-        X_balanced, y_balanced = smote.fit_resample(X_scaled, y)
-    else:
-        X_balanced, y_balanced = X_scaled, y.values
+    classes = ['yes', 'no']
+    for cls in classes:
+        input_dir = os.path.join(input_base_dir, cls)
+        output_dir = os.path.join(output_base_dir, cls)
+        os.makedirs(output_dir, exist_ok=True)
         
-    # 3. Dimensionality Reduction using PCA
-    pca = PCA(n_components=n_components)
-    X_pca = pca.fit_transform(X_balanced)
-    
-    return X_pca, y_balanced, pca, scaler
+        if not os.path.exists(input_dir):
+            continue
+            
+        files = os.listdir(input_dir)
+        print(f"Augmenting and saving tensors for class '{cls}': {len(files)} source images.")
+        
+        for file in files:
+            file_path = os.path.join(input_dir, file)
+            try:
+                img = Image.open(file_path).convert('RGB')
+                base_name, _ = os.path.splitext(file)
+                
+                # Génération des versions augmentées enregistrées en .pt
+                for i in range(num_augmentations):
+                    tensor_img = augmentation_pipeline(img)
+                    save_filename = f"{base_name}_aug_{i}.pt"
+                    save_path = os.path.join(output_dir, save_filename)
+                    torch.save(tensor_img, save_path)
+            except Exception as e:
+                print(f"Error processing file {file}: {e}")
+    print("All augmented tensors successfully saved as .pt files!")
 
 def augment_tabular_data(X, y, noise_factor=0.01):
-    """
-    Applique une data augmentation sur les caractéristiques tabulaires 
-    en ajoutant un léger bruit gaussien pour enrichir la diversité du dataset d'entraînement.
-    """
     noise = np.random.normal(0, noise_factor, X.shape)
     X_augmented = X + noise
     X_combined = np.vstack((X, X_augmented))
@@ -182,10 +171,6 @@ def augment_tabular_data(X, y, noise_factor=0.01):
     return X_combined, y_combined
 
 def preprocess_tabular_data(df, target_col='labels', n_components=30, apply_smote=True, apply_augmentation=True):
-    """
-    Nettoie, normalise, équilibre (via SMOTE), augmente (via bruit gaussien) 
-    et réduit les dimensions (via PCA à 30 composants pour ~98% de variance) des données tabulaires.
-    """
     X = df.drop(columns=[target_col])
     y = df[target_col]
     
@@ -194,22 +179,18 @@ def preprocess_tabular_data(df, target_col='labels', n_components=30, apply_smot
 
     X = X.fillna(0)
     
-    # 1. Normalisation
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
     
-    # 2. Équilibrage des classes (SMOTE)
     if apply_smote:
         smote = SMOTE(random_state=42)
         X_balanced, y_balanced = smote.fit_resample(X_scaled, y)
     else:
         X_balanced, y_balanced = X_scaled, y.values
         
-    # 3. Data Augmentation tabulaire (Bruit gaussien optionnel)
     if apply_augmentation:
         X_balanced, y_balanced = augment_tabular_data(X_balanced, y_balanced, noise_factor=0.01)
 
-    # 4. Réduction de dimension par PCA (30 composants pour ~98% de variance)
     pca = PCA(n_components=n_components)
     X_pca = pca.fit_transform(X_balanced)
     

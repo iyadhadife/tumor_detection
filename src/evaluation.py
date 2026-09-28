@@ -3,7 +3,7 @@ import torch
 
 def evaluate_cnn_model(model, test_images, test_labels):
     """
-    Évalue un modèle CNN PyTorch sur le jeu de test et calcule toutes les métriques clés.
+    Evaluates a PyTorch CNN model on the test set and computes all key metrics.
     """
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)

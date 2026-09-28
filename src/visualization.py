@@ -4,7 +4,7 @@ from sklearn.metrics import ConfusionMatrixDisplay
 
 def plot_model_comparison(results_df):
     """
-    Affiche un graphique à barres comparant l'accuracy des différents modèles.
+    Displays a bar chart comparing the accuracy of different models.
     """
     plt.figure(figsize=(10, 6))
     sns.barplot(x='Accuracy', y='Model', data=results_df, palette='viridis')
@@ -17,7 +17,7 @@ def plot_model_comparison(results_df):
 
 def plot_metrics_heatmap(results_df):
     """
-    Affiche une heatmap de toutes les métriques (Accuracy, Precision, Recall, F1-Score).
+    Displays a heatmap of all metrics (Accuracy, Precision, Recall, F1-Score).
     """
     df_melt = results_df.set_index('Model')
     plt.figure(figsize=(10, 6))
@@ -29,7 +29,7 @@ def plot_metrics_heatmap(results_df):
 
 def plot_confusion_matrices(confusion_matrices_dict):
     """
-    Affiche toutes les matrices de confusion sous forme de grille pour analyse d'erreurs.
+    Displays all confusion matrices in a grid for error analysis.
     """
     n_models = len(confusion_matrices_dict)
     cols = 3

@@ -4,13 +4,13 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 
 def train_and_evaluate_models(models_dict, X_train, X_test, y_train, y_test):
     """
-    Entraîne une liste de modèles et évalue leurs performances sur le jeu de test.
+    Trains a list of models and evaluates their performance on the test set.
     
     Returns:
-    - results_df (pd.DataFrame): Tableau récapitulatif des métriques trié par Accuracy.
-    - trained_models (dict): Dictionnaire des modèles entraînés.
-    - predictions (dict): Dictionnaire des prédictions.
-    - confusion_matrices (dict): Dictionnaire des matrices de confusion.
+    - results_df (pd.DataFrame): Summary table of metrics sorted by Accuracy.
+    - trained_models (dict): Dictionary of trained models.
+    - predictions (dict): Dictionary of predictions.
+    - confusion_matrices (dict): Dictionary of confusion matrices.
     """
     performance_data = []
     trained_models = {}
@@ -94,7 +94,7 @@ def train_and_evaluate_models(models_dict, X_train, X_test, y_train, y_test):
 
 def train_cnn_model(model, train_images, train_labels, epochs=30, lr=0.0001):
     """
-    Entraîne le modèle CNN avec PyTorch sur le dataset d'images augmentées.
+    Trains the CNN model with PyTorch on the augmented image dataset.
     """
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=lr)
@@ -192,10 +192,10 @@ def train_advanced_cnn_with_early_stopping(
     patience=6
 ):
     """
-    Entraîne n'importe quel modèle CNN (SimpleCNN ou DeepCNN) avec :
-    - Optimiseurs paramétrables (AdamW, Adam, SGD).
-    - Scheduler de Learning Rate (ReduceLROnPlateau).
-    - Early Stopping basé sur l'accuracy de validation.
+    Trains any CNN model (SimpleCNN or DeepCNN) with:
+    - Configurable optimizers (AdamW, Adam, SGD).
+    - Learning rate scheduler (ReduceLROnPlateau).
+    - Early stopping based on validation accuracy.
     """
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)

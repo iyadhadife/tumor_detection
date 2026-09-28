@@ -18,9 +18,9 @@ def add_to_dataset(dataset, value, name):
     dataset[name].append(value)
     return dataset
 
-def color_names(names, nom):
+def color_names(names, name_prefix):
     for i in range(256):
-        names.append(f'{nom}{i}')
+        names.append(f'{name_prefix}{i}')
     return names
 
 def add_color_to_dataset(dataset, hist, color):
@@ -121,8 +121,8 @@ def create_nsame_values(val, nb):
 
 def process_and_save_augmented_tensors(input_base_dir, output_base_dir, num_augmentations=2, img_size=(32, 32)):
     """
-    Applique des transformations PyTorch avec Data Augmentation sur les images 
-    et sauvegarde les tenseurs résultants au format .pt dans output_base_dir.
+    Applies PyTorch data augmentation transformations to the images and saves the resulting
+    tensors in .pt format to output_base_dir.
     """
     os.makedirs(output_base_dir, exist_ok=True)
     

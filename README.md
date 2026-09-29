@@ -26,6 +26,13 @@ brain-tumor-project/
 │       └── augmented_images/
 │           ├── yes/          # .pt tensors with tumor
 │           └── no/           # .pt healthy tensors
+│       └── augmented_images_224x224/
+│           ├── yes/          # .pt tensors with tumor
+│           └── no/           # .pt healthy tensors
+│   └── raw/
+│       └── augmented_images/
+│           ├── yes/          # .pt tensors with tumor
+│           └── no/           # .pt healthy tensors
 │
 ├── models/                   # Local model weights (.pth)
 │   ├── SimpleCNN_Trained.pth
@@ -35,15 +42,22 @@ brain-tumor-project/
 │   └── vit_b_16-c867db91.pth
 │
 ├── notebooks/                # Jupyter Notebooks by step
+│   ├── 01_exploration_dataset.ipynb
+│   ├── 02_preprocessing.ipynb
+│   ├── 03_machine_learning_classique.ipynb
 │   ├── 04_deep_learning_cnn.ipynb
-│   ├── 06_transfer_learning.ipynb
-│   ├── 07_vision_transformer.ipynb
-│   ├── 08_global_results_comparison.ipynb
-│   └── 09_explainability_xai.ipynb
+│   ├── 05_transfer_learning.ipynb
+│   ├── 06_Visual_Transformer.ipynb
+│   ├── 07_Global_Résult_Comparison.ipynb
+│   └── 08_Explanability_AI.ipynb
 │
 ├── src/                      # Reusable Python modules
-│   ├── models.py             # Architecture definitions (CNN, CBAM, ViT, Transfer)
-│   └── training.py           # Training, validation, and early stopping functions
+│   ├── data_loader.py
+│   ├── evaluation.py
+│   ├── models.py           
+│   ├── preprocessing.py       
+│   ├── training.py          
+│   └── visualization.py          
 │
 ├── .env                      # Environment variables
 └── README.md                 # Project documentation
